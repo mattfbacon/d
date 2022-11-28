@@ -1,0 +1,10 @@
+[package]
+edition = "2021"
+name = "d"
+version = "0.1.0"
+
+[dependencies]
+anyhow = "1"
+argh = "0.1"
+nix = "0.25"
+thiserror = "1"
