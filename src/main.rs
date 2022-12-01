@@ -20,41 +20,38 @@
 use std::path::PathBuf;
 use std::str::FromStr;
 
-use anyhow::{anyhow, bail, ensure, Context as _, Result};
+use anyhow::{anyhow, ensure, Context as _, Result};
 
 /// Manage disk mounting
 #[derive(Debug, argh::FromArgs)]
 struct Args {
-	/// mount the specified disk
-	#[argh(switch, short = 'm')]
-	mount: bool,
-	/// unmount the specified disk
-	#[argh(switch, short = 'u')]
-	unmount: bool,
-	/// enter a subshell session within the specified disk
-	///
-	/// the disk will be unmounted on exit.
-	#[argh(switch, short = 'c')]
-	cd: bool,
+	#[argh(positional)]
+	action: Action,
 
 	#[argh(positional)]
 	disk: Disk,
 }
 
+#[derive(Debug, Clone, Copy)]
 enum Action {
 	Mount,
 	Unmount,
 	Cd,
 }
 
-impl Action {
-	pub fn from_bools(mount: bool, unmount: bool, cd: bool) -> Result<Action> {
-		Ok(match (mount, unmount, cd) {
-			(true, false, false) => Self::Mount,
-			(false, true, false) => Self::Unmount,
-			(false, false, true) => Self::Cd,
-			(false, false, false) => bail!("no action specified. expected -m, -u, or -c."),
-			_ => bail!("multiple actions specified. only one is allowed."),
+#[derive(Debug, thiserror::Error)]
+#[error("unknown action {0:?}. valid actions are m (mount), u (unmount), c (cd).")]
+struct UnknownAction(String);
+
+impl FromStr for Action {
+	type Err = UnknownAction;
+
+	fn from_str(s: &str) -> Result<Self, UnknownAction> {
+		Ok(match s {
+			"m" => Self::Mount,
+			"u" => Self::Unmount,
+			"c" => Self::Cd,
+			_ => return Err(UnknownAction(s.to_owned())),
 		})
 	}
 }
@@ -307,9 +304,8 @@ fn main() -> Result<()> {
 	);
 
 	let args: Args = argh::from_env();
-	let action = Action::from_bools(args.mount, args.unmount, args.cd).context("reading action")?;
 
-	match action {
+	match args.action {
 		Action::Mount => {
 			let MountReturn { mount_path, .. } = do_mount(args.disk)?;
 			eprintln!("mounted {} at {mount_path:?}.", args.disk.as_repr());
