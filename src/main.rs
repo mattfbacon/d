@@ -209,10 +209,21 @@ fn unmount(disk_name: &str) -> Result<()> {
 }
 
 fn open_encrypted(luks_uuid: &str, disk_name: &str) -> Result<()> {
+	let opened_name = opened_name_for_encrypted(luks_uuid, disk_name);
+	if std::process::Command::new("cryptsetup")
+		.arg("status")
+		.arg(&opened_name)
+		.status()?
+		.success()
+	{
+		eprintln!("`cryptsetup status` reported OK, assuming encrypted device is already open.");
+		return Ok(());
+	}
+
 	let code = std::process::Command::new("cryptsetup")
 		.arg("open")
 		.arg(dev_path_for_uuid(luks_uuid)?)
-		.arg(opened_name_for_encrypted(luks_uuid, disk_name))
+		.arg(&opened_name)
 		.status()?;
 
 	if code.success() {
