@@ -62,6 +62,7 @@ enum Disk {
 	Sivydatni,
 	Muhackiku,
 	Barda,
+	Sivbra,
 }
 
 impl Disk {
@@ -71,12 +72,13 @@ impl Disk {
 			Self::Sivydatni => "sivydatni",
 			Self::Muhackiku => "muhackiku",
 			Self::Barda => "barda",
+			Self::Sivbra => "sivbra",
 		}
 	}
 
 	fn inner_filesystem(self) -> &'static str {
 		match self {
-			Self::Zdani | Self::Sivydatni | Self::Muhackiku | Self::Barda => "ext4",
+			Self::Zdani | Self::Sivydatni | Self::Muhackiku | Self::Barda | Self::Sivbra => "ext4",
 		}
 	}
 
@@ -95,6 +97,10 @@ impl Disk {
 			},
 			Self::Barda => Mountable::Plain {
 				uuid: "8f8ccfd3-aeae-4515-b081-3706561c64d4",
+			},
+			Self::Sivbra => Mountable::Encrypted {
+				outer_uuid: "5bd18b6b-1fc7-42e8-b318-c0c6d32ec86c",
+				inner_uuid: "09edb833-774e-4480-b9fa-f9e81627b0d5",
 			},
 		}
 	}
@@ -120,6 +126,7 @@ impl FromStr for Disk {
 			"s" => Self::Sivydatni,
 			"m" => Self::Muhackiku,
 			"b" => Self::Barda,
+			"sb" => Self::Sivbra,
 			_ => return Err(UnknownDisk(s.to_owned())),
 		})
 	}
