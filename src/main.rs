@@ -295,7 +295,7 @@ fn do_cd(disk: Disk) -> Result<()> {
 
 	let MountReturn {
 		mount_path,
-		was_already_mounted,
+		was_already_mounted: _,
 	} = do_mount(disk)?;
 	eprintln!("d: entering subshell. stay safe, friend.");
 	let mut shell = std::process::Command::new("fish")
@@ -306,11 +306,15 @@ fn do_cd(disk: Disk) -> Result<()> {
 		.spawn()
 		.context("spawning sub-shell")?;
 	shell.wait().context("waiting for sub-shell")?;
-	if was_already_mounted {
-		eprintln!("d: disk was already mounted; not unmounting.");
+	eprintln!("d: cleaning up; unmounting.");
+	if let Ok(()) = do_unmount(disk) {
+		eprintln!("d: unmounted, bye");
 	} else {
-		eprintln!("d: cleaning up; unmounting.");
-		do_unmount(disk)?;
+		eprintln!("d: unmount failed. maybe still busy");
+		if nix::unistd::isatty(2) == Ok(true) {
+			// Give the user some time to see the message.
+			std::thread::sleep(std::time::Duration::from_secs(1));
+		}
 	}
 	Ok(())
 }
