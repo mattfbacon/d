@@ -177,8 +177,8 @@ fn mount(uuid: &str, disk_name: &str, filesystem: &str) -> Result<MountReturn> {
 		Some(&dev_path_for_uuid(uuid)?),
 		mount_path.as_str(),
 		Some(filesystem),
-		MsFlags::MS_RELATIME | MsFlags::MS_LAZYTIME,
-		None::<&str>,
+		MsFlags::MS_NOATIME | MsFlags::MS_NOSUID | MsFlags::MS_NODEV,
+		Some("discard,delalloc"),
 	);
 	let was_already_mounted = match mount_res {
 		Err(nix::errno::Errno::EBUSY) => {
